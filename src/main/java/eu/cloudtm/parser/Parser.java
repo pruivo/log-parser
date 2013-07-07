@@ -3,6 +3,7 @@ package eu.cloudtm.parser;
 import eu.cloudtm.LogEntry;
 
 import java.io.InputStream;
+import java.util.Iterator;
 
 /**
  * @author Pedro Ruivo
@@ -10,6 +11,6 @@ import java.io.InputStream;
  */
 public interface Parser {
 
-    LogEntry[] parse(InputStream stream) throws Exception;
+    LogIterator parse(InputStream stream) throws Exception;
 
 }

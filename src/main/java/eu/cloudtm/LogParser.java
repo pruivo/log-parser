@@ -1,9 +1,11 @@
 package eu.cloudtm;
 
 import eu.cloudtm.analyzer.Analyzer;
+import eu.cloudtm.parser.LogIterator;
 import eu.cloudtm.parser.Parser;
 
 import java.io.InputStream;
+import java.util.Iterator;
 
 /**
  * @author Pedro Ruivo
@@ -23,13 +25,13 @@ public class LogParser {
             throw new IllegalArgumentException(arguments.get(Argument.FILE) + " not found!");
         }
 
-        LogEntry[] logEntries = parser.parse(inputStream);
+        LogIterator iterator = parser.parse(inputStream);
         //System.out.println(Arrays.toString(logEntries));
 
         try {
             analyzer.before();
-            for (LogEntry logEntry : logEntries) {
-                analyzer.analyze(logEntry);
+            while (iterator.hasNext()) {
+                analyzer.analyze(iterator.next());
             }
         } catch (Throwable throwable) {
             throwable.printStackTrace();

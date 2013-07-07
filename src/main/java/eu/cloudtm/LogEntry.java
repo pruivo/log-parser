@@ -11,8 +11,10 @@ public class LogEntry {
     private final String clazz;
     private final String thread;
     private final String message;
+    private final int lineNumber;
 
-    public LogEntry(long time, String level, String clazz, String thread, String message) {
+    public LogEntry(int lineNumber, long time, String level, String clazz, String thread, String message) {
+        this.lineNumber = lineNumber;
         this.time = time;
         this.level = level;
         this.clazz = clazz;
@@ -40,10 +42,15 @@ public class LogEntry {
         return message;
     }
 
+    public final int lineNumber() {
+        return lineNumber;
+    }
+
     @Override
     public String toString() {
         return "LogEntry{" +
-                "time=" + time +
+                "lineNumber=" + lineNumber +
+                ", time=" + time +
                 ", level='" + level + '\'' +
                 ", clazz='" + clazz + '\'' +
                 ", thread='" + thread + '\'' +

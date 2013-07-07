@@ -3,14 +3,13 @@ package eu.cloudtm.parser;
 import eu.cloudtm.LogEntry;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * @author Pedro Ruivo
@@ -22,22 +21,16 @@ public class TorqueBoxLogParser implements Parser {
     private static final DateFormat TIMESTAMP_PARSER = new SimpleDateFormat("HH:mm:ss,SSS");
 
     @Override
-    public synchronized final LogEntry[] parse(InputStream inputStream) throws Exception {
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-        List<LogEntry> logEntryList = new ArrayList<LogEntry>(1024);
-        String line;
-        while ((line = bufferedReader.readLine()) != null) {
-            logEntryList.add(parseLine(line));
-        }
-        return logEntryList.toArray(new LogEntry[logEntryList.size()]);
+    public final LogIterator parse(InputStream inputStream) throws Exception {
+        return new LogEntryIterator(inputStream);
     }
 
-    private LogEntry parseLine(String line) throws Exception {
+    private LogEntry parseLine(int lineNumber, String line) throws Exception {
         if (line == null || line.isEmpty()) {
             return null;
         }
         LineState state = new LineState(line.toCharArray());
-        return new LogEntry(parseTimeStamp(state), parseLevel(state), parseClass(state), parseThread(state),
+        return new LogEntry(lineNumber, parseTimeStamp(state), parseLevel(state), parseClass(state), parseThread(state),
                 parseMessage(state));
     }
 
@@ -58,7 +51,7 @@ public class TorqueBoxLogParser implements Parser {
         while (state.hasNext() && (c = state.next()) != ' ') {
             builder.append(c);
         }
-        return builder.toString();
+        return builder.toString().trim();
     }
 
     private String parseClass(LineState state) {
@@ -103,9 +96,17 @@ public class TorqueBoxLogParser implements Parser {
     }
 
     private void assertNextChar(LineState state, char c) {
-        char current = state.next();
-        if (current != c) {
-            throw new IllegalStateException("Expected a " + c + " as next char but it is " + current  +
+        boolean isSpaceExcepted = c == ' ';
+        while (state.hasNext()) {
+            char current = state.next();
+            if (current == ' ' && isSpaceExcepted) {
+                return;
+            } else if (current == ' ') {
+                continue; //skip spaces
+            } else if (current == c) {
+                return;
+            }
+            throw new IllegalStateException("Expected a " + c + " as next char but it is " + current +
                     ". State=" + state);
         }
     }
@@ -146,6 +147,39 @@ public class TorqueBoxLogParser implements Parser {
                     "line=" + new String(array) +
                     ", nextPosition=" + nextPosition +
                     '}';
+        }
+    }
+
+    private class LogEntryIterator implements LogIterator {
+
+        private final BufferedReader bufferedReader;
+        private String currentLine;
+        private int lineNumber;
+
+        private LogEntryIterator(InputStream inputStream) throws IOException {
+            this.bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+            this.lineNumber = 0;
+            nextLine();
+        }
+
+        @Override
+        public final boolean hasNext() {
+            return currentLine != null && !currentLine.isEmpty();
+        }
+
+        @Override
+        public final LogEntry next() throws Exception {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            LogEntry entry = parseLine(lineNumber, currentLine);
+            nextLine();
+            return entry;
+        }
+
+        private void nextLine() throws IOException {
+            this.currentLine = bufferedReader.readLine();
+            this.lineNumber++;
         }
     }
 }
