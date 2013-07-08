@@ -4,14 +4,39 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.text.DateFormat;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
- * //TODO: document this!
- *
  * @author Pedro Ruivo
- * @since 5.3
+ * @since 1.0
  */
 public class Util {
+
+    public static final DateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS");
+    public static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+    public static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance();
+    public static final String LINE_SEPARATOR = System.getProperty("line.separator");
+
+    public static String prettyPrintTime(long time) {
+        if (time == -1) {
+            return "N/A";
+        }
+        return TIME_FORMAT.format(new Date(time));
+    }
+
+    public static String prettyPrintDate(long time) {
+        if (time == -1) {
+            return "N/A";
+        }
+        return DATE_FORMAT.format(new Date(time));
+    }
+
+    public static String prettyPrintNumber(Number number) {
+        return NUMBER_FORMAT.format(number);
+    }
 
     public static Class<?> loadClass(String name) {
         for (ClassLoader loader : classLoaders()) {

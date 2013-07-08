@@ -9,22 +9,16 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 
+import static eu.cloudtm.Util.prettyPrintTime;
+
 /**
  * @author Pedro Ruivo
  * @since 2.8
  */
 public class TxReadOnlyAnalyzer implements Analyzer {
 
-    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS");
 
     public TxReadOnlyAnalyzer() {
-    }
-
-    private static String prettyPrintTime(long time) {
-        if (time == -1) {
-            return "N/A";
-        }
-        return DATE_FORMAT.format(new Date(time));
     }
 
     @Override

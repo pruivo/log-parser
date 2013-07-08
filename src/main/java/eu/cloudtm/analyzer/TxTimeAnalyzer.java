@@ -2,10 +2,10 @@ package eu.cloudtm.analyzer;
 
 import eu.cloudtm.LogEntry;
 
-import java.text.DateFormat;
-import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
+
+import static eu.cloudtm.Util.prettyPrintNumber;
+import static eu.cloudtm.Util.prettyPrintTime;
 
 /**
  * @author Pedro Ruivo
@@ -13,8 +13,6 @@ import java.util.*;
  */
 public class TxTimeAnalyzer implements Analyzer {
 
-    private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance();
-    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("HH:mm:ss,SSS");
     private final Map<String, StatsDuration> statsDurations = new HashMap<String, StatsDuration>();
 
     @Override
@@ -96,8 +94,8 @@ public class TxTimeAnalyzer implements Analyzer {
         public void endTime(long endTime) {
             if (this.endTime != -1) {
                 System.err.println("Error for id [" + id + "]. This transaction statistic was already flushed! first flush @ "
-                        + DATE_FORMAT.format(new Date(this.endTime)) + " and second flush @ " +
-                        DATE_FORMAT.format(new Date(this.endTime)) + ". time elapsed="
+                        + prettyPrintTime(endTime) + " and second flush @ " +
+                        prettyPrintTime(this.endTime) + ". time elapsed="
                         + (endTime - this.endTime) + " (msec)");
             }
             this.endTime = endTime;
@@ -118,9 +116,9 @@ public class TxTimeAnalyzer implements Analyzer {
         public String toString() {
             return "StatsDuration{" +
                     "id='" + id + '\'' +
-                    ", startTime=" + DATE_FORMAT.format(new Date(startTime)) +
-                    ", endTime=" + DATE_FORMAT.format(new Date(endTime)) +
-                    ", duration=" + NUMBER_FORMAT.format(duration()) + " (msec)" +
+                    ", startTime=" + prettyPrintTime(startTime) +
+                    ", endTime=" + prettyPrintTime(endTime) +
+                    ", duration=" + prettyPrintNumber(duration()) + " (msec)" +
                     '}';
         }
     }
