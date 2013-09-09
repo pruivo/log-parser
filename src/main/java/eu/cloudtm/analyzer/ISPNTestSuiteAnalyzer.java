@@ -101,6 +101,7 @@ public class ISPNTestSuiteAnalyzer implements Analyzer {
             } else {
                 try {
                     state.printStream = new PrintStream(new FileOutputStream(fileToWrite));
+                    System.out.println(testClass + "." + testName + " writing to " + fileToWrite.getAbsolutePath());
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                     state.printStream = System.out;

@@ -19,11 +19,11 @@ public class ISPNTestSuiteParser implements Parser {
 
     private static final DateFormat TIMESTAMP_PARSER = new SimpleDateFormat("HH:mm:ss,SSS");
     private static final DateFormat DATE_PARSER = new SimpleDateFormat("yyyy-MM-dd");
-    private static final String OLD_FORMAT_PROPERTY = "ispn.oldformat";
-    private final boolean isOlderFormat;
+    private static final String FORMAT_PROPERTY = "ispn.logFormat";
+    private final LogFormat logFormat;
 
     public ISPNTestSuiteParser() {
-        isOlderFormat = Boolean.getBoolean(OLD_FORMAT_PROPERTY);
+        logFormat = LogFormat.fromString(System.getProperty(FORMAT_PROPERTY));
     }
 
     @Override
@@ -53,25 +53,41 @@ public class ISPNTestSuiteParser implements Parser {
         if (!tryParse(state)) {
             return null;
         }
-        if (isOlderFormat) {
-            //format-older: date{yyyy-mm-dd} time{h:m:s,S] timestamp level [class] (thread) message
-            parseDate(state); //skip state because log entry does not have it
-            parseTime(state); //skip time, we have the timestamp
-            return new LogEntry(lineNumber, parseTimeStamp(state), parseLevel(state), parseClass(state), parseThread(state),
-                    parseMessage(state));
-        } else {
-            //format-new: date{yyyy-mm-dd} time{h:m:s,S] level (thread) [class] message
-            long time = parseDate(state) + parseTime(state);
-            String level = parseLevel(state);
-            String thread = parseThread(state);
-            String clazz = parseClass(state);
-            return new LogEntry(lineNumber, time, level, clazz, thread, parseMessage(state));
+        long time = 0;
+        switch (logFormat) {
+            case FORMAT_1:
+                //format-new: date{yyyy-mm-dd} time{h:m:s,S} level (thread) [class] message
+                time = parseDate(state);
+            case FORMAT_3:
+                //format-3: time{h:m:s,S} level (thread) [class] message
+                time += parseTime(state);
+                String level = parseLevel(state);
+                String thread = parseThread(state);
+                String clazz = parseClass(state);
+                return new LogEntry(lineNumber, time, level, clazz, thread, parseMessage(state));
+            case FORMAT_2:
+                //format-older: date{yyyy-mm-dd} time{h:m:s,S} timestamp level [class] (thread) message
+                parseDate(state); //skip state because log entry does not have it
+                parseTime(state); //skip time, we have the timestamp
+                return new LogEntry(lineNumber, parseTimeStamp(state), parseLevel(state), parseClass(state), parseThread(state),
+                        parseMessage(state));
+            default:
+                throw new IllegalStateException();
         }
     }
 
     private boolean tryParse(LineState state) {
         try {
-            parseDate(state);
+            switch (logFormat) {
+                case FORMAT_1:
+                case FORMAT_2:
+                    parseDate(state);
+                    break;
+                case FORMAT_3:
+                    parseTime(state);
+                    break;
+                default: throw new IllegalStateException();
+            }
         } catch (ParseException e) {
             return false;
         } finally {
@@ -180,6 +196,34 @@ public class ISPNTestSuiteParser implements Parser {
     private void assertHasNext(LineState state) {
         if (!state.hasNext()) {
             throw new IllegalStateException("Reached EOL soon as expected. State=" + state);
+        }
+    }
+
+    private static enum LogFormat {
+        FORMAT_1, FORMAT_2, FORMAT_3;
+
+        static LogFormat fromString(String value) {
+            if (value == null) {
+                System.out.println("Format does not specified. Using format 1");
+                return FORMAT_1;
+            }
+            try {
+                int format = Integer.parseInt(value);
+                switch (format) {
+                    case 1:
+                        return FORMAT_1;
+                    case 2:
+                        return FORMAT_2;
+                    case 3:
+                        return FORMAT_3;
+                    default:
+                        System.out.println("Unknown format " + value + " Using format 1");
+                        return FORMAT_1;
+                }
+            } catch (Exception e) {
+                System.out.println("Unknown format " + value + " Using format 1");
+                return FORMAT_1;
+            }
         }
     }
 
